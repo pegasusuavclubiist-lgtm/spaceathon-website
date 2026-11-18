@@ -1,0 +1,184 @@
+import type { Metadata } from "next";
+import { TrackCompare } from "@/app/components/sections/TrackCompare";
+import { TiltCard } from "@/app/components/fx/TiltCard";
+import { Badge } from "@/app/components/ui/Badge";
+import { BeamBorder } from "@/app/components/ui/BeamBorder";
+import { Button3D } from "@/app/components/ui/Button3D";
+import { Callout } from "@/app/components/ui/Callout";
+import { Card } from "@/app/components/ui/Card";
+import { Frame } from "@/app/components/ui/Frame";
+import { PageHeader } from "@/app/components/ui/PageHeader";
+import { SectionHeading } from "@/app/components/ui/SectionHeading";
+import { trackRules, tracks, trackThemesNote } from "@/app/content/event-data";
+
+export const metadata: Metadata = {
+  title: "Tracks",
+  description:
+    "Compare the Beginner and Advanced tracks at Kosmodrome 2026: eligibility, problem style, evaluation, submission pack, finalists and themes.",
+  alternates: {
+    canonical: "/tracks",
+  },
+};
+
+const pageContainer =
+  "mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8";
+
+const beginnerTrack = tracks[0];
+const advancedTrack = tracks[1];
+
+const comparisonRows = [
+  {
+    label: "Who it is for",
+    beginner: beginnerTrack.audience,
+    advanced: advancedTrack.audience,
+  },
+  {
+    label: "Team size",
+    beginner: beginnerTrack.teamSize,
+    advanced: advancedTrack.teamSize,
+  },
+  {
+    label: "Problem style",
+    beginner: beginnerTrack.problemStyle.join(" "),
+    advanced: advancedTrack.problemStyle.join(" "),
+  },
+  {
+    label: "Evaluation",
+    beginner: beginnerTrack.evaluation.join(" "),
+    advanced: advancedTrack.evaluation.join(" "),
+  },
+  {
+    label: "Submission pack",
+    beginner: beginnerTrack.submissionPack.join(", "),
+    advanced: advancedTrack.submissionPack.join(", "),
+  },
+  {
+    label: "Finalists",
+    beginner: beginnerTrack.finalists,
+    advanced: advancedTrack.finalists,
+  },
+];
+
+export default function TracksPage() {
+  return (
+    <div className={pageContainer}>
+      <PageHeader
+        eyebrow="Launch pads"
+        title="Two tracks. Separate problem sets."
+        description="The most senior member sets the track. Opting up is allowed; moving down is never allowed. Tracks never compete against each other."
+      >
+        <Button3D href="/register" data-cursor="LAUNCH">
+          Register your team
+        </Button3D>
+      </PageHeader>
+
+      <section
+        className="mt-12"
+        aria-labelledby="comparison-heading"
+        data-hud="LAUNCH PADS"
+      >
+        <SectionHeading
+          id="comparison-heading"
+          eyebrow="Side by side"
+          title="Beginner vs Advanced"
+          description="Same 48-hour window, different starting points and submission packs. Focus a column or hide the rows that match."
+        />
+        <BeamBorder className="mt-8 rounded-2xl">
+          <TrackCompare rows={comparisonRows} />
+        </BeamBorder>
+      </section>
+
+      <section
+        className="mt-16"
+        aria-labelledby="themes-heading"
+        data-hud="PROBLEM SPACE"
+      >
+        <SectionHeading
+          id="themes-heading"
+          eyebrow="Problem space"
+          title="Indicative themes"
+          description={trackThemesNote}
+        />
+        <div className="mt-8 grid gap-5 lg:grid-cols-2">
+          {tracks.map((track) => (
+            <TiltCard
+              key={track.id}
+              id={track.id}
+              spotlight
+              className="h-full scroll-mt-24 rounded-xl"
+            >
+              <Card className="h-full">
+                <div className="flex items-center justify-between gap-3">
+                  <Badge
+                    tone={track.id === "beginner" ? "primary" : "accent"}
+                  >
+                    {track.name}
+                  </Badge>
+                  <span className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-muted">
+                    {track.finalists}
+                  </span>
+                </div>
+                <h3 className="mt-4 text-xl font-semibold tracking-tight text-foreground">
+                  {track.name} themes
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted">
+                  {track.summary}
+                </p>
+                <ul className="mt-4 space-y-2.5">
+                  {track.themes.map((theme) => (
+                    <li
+                      key={theme}
+                      className="flex gap-3 text-sm leading-relaxed text-foreground"
+                    >
+                      <span
+                        className="mt-2 size-1.5 shrink-0 rounded-full bg-primary"
+                        aria-hidden="true"
+                      />
+                      <span>{theme}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            </TiltCard>
+          ))}
+        </div>
+      </section>
+
+      <section
+        className="mt-16"
+        aria-labelledby="track-rules-heading"
+        data-hud="BOUNDARIES"
+      >
+        <SectionHeading
+          id="track-rules-heading"
+          eyebrow="Boundaries"
+          title="Track rules"
+        />
+        <Frame className="mt-8 rounded-xl">
+          <Callout title="Track assignment is final at D-3" tone="primary">
+            <ul className="mt-1 space-y-2">
+              {trackRules.map((rule) => (
+                <li key={rule} className="flex gap-3">
+                  <span
+                    className="mt-2 size-1.5 shrink-0 rounded-full bg-primary"
+                    aria-hidden="true"
+                  />
+                  <span>{rule}</span>
+                </li>
+              ))}
+            </ul>
+          </Callout>
+        </Frame>
+      </section>
+
+      <div className="mt-12 flex flex-wrap gap-3">
+        <Button3D href="/scoring" variant="secondary">
+          See scoring
+        </Button3D>
+        <Button3D href="/submission" variant="secondary">
+          Submission requirements
+        </Button3D>
+      </div>
+    </div>
+  );
+}
