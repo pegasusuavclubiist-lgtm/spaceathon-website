@@ -11,7 +11,7 @@ import {
 } from "@/lib/http";
 import { rateLimit } from "@/lib/rate-limit";
 import { uploadGate } from "@/lib/rules";
-import { safeEqual, sha256Hex, sniffIdFile } from "@/lib/security";
+import { ID_FILE_TYPES, safeEqual, sha256Hex, sniffIdFile } from "@/lib/security";
 import {
   PAYMENT_PROOFS_BUCKET,
   removeObjects,
@@ -82,10 +82,11 @@ export async function POST(
     }
 
     const bytes = new Uint8Array(await entry.arrayBuffer());
-    const detected = sniffIdFile(bytes);
-    if (!detected) {
+    const kind = sniffIdFile(bytes);
+    if (!kind) {
       return errorResponse(415, "Upload a JPEG, PNG, WebP or PDF payment screenshot.");
     }
+    const detected = ID_FILE_TYPES[kind];
 
     const objectPath = `${id}/payment-proof-${Date.now()}.${detected.extension}`;
     await uploadObject(objectPath, bytes, detected.contentType, PAYMENT_PROOFS_BUCKET);
