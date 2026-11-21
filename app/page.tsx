@@ -22,19 +22,9 @@ import { SectionHeading } from "@/app/components/ui/SectionHeading";
 import { StatCard } from "@/app/components/ui/StatCard";
 import { cn } from "@/app/components/ui/cn";
 import { ArrowRightIcon } from "@/app/components/ui/icons";
-import {
-  faqGroups,
-  guarantees,
-  homeFaqIds,
-  homeTimeline,
-  prizeCertificates,
-  prizeTracks,
-  stats,
-  trackThemesNote,
-  tracks,
-  type FaqGroup,
-} from "@/app/content/event-data";
-import { siteConfig, TBA } from "@/app/content/site-config";
+import type { FaqGroup, TimelineItem } from "@/app/content/event-data";
+import { siteConfig } from "@/app/content/site-config";
+import { getLiveSiteContent } from "@/lib/site-content";
 
 export const metadata: Metadata = {
   title: { absolute: `${siteConfig.name} — ${siteConfig.tagline}` },
@@ -47,48 +37,82 @@ export const metadata: Metadata = {
 const pageContainer =
   "mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8";
 
-const eventJsonLd = siteConfig.eventStartISO
-  ? {
-      "@context": "https://schema.org",
-      "@type": "Event",
-      name: siteConfig.name,
-      description: siteConfig.description,
-      startDate: siteConfig.eventStartISO,
-      eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
-      eventStatus: "https://schema.org/EventScheduled",
-      location: {
-        "@type": "VirtualLocation",
+export default async function HomePage() {
+  const content = await getLiveSiteContent();
+  const {
+    general,
+    stats,
+    guarantees,
+    tracks,
+    trackThemesNote,
+    timeline,
+    prizeTracks,
+    prizeCertificates,
+    faqGroups,
+    homeFaqIds,
+  } = content;
+
+  const eventJsonLd = general.eventStartISO
+    ? {
+        "@context": "https://schema.org",
+        "@type": "Event",
+        name: general.name,
+        description: general.description,
+        startDate: general.eventStartISO,
+        eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
+        eventStatus: "https://schema.org/EventScheduled",
+        location: {
+          "@type": "VirtualLocation",
+          url: siteConfig.siteUrl,
+        },
+        organizer: {
+          "@type": "Organization",
+          name: general.organiser,
+          url: siteConfig.siteUrl,
+        },
         url: siteConfig.siteUrl,
-      },
-      organizer: {
-        "@type": "Organization",
-        name: "Indian Institute of Space Science and Technology",
-        url: siteConfig.siteUrl,
-      },
-      url: siteConfig.siteUrl,
-    }
-  : null;
+      }
+    : null;
 
-const faqById = new Map(
-  faqGroups.flatMap((group) =>
-    group.items.map((item) => [item.id, item] as const),
-  ),
-);
+  const faqById = new Map(
+    faqGroups.flatMap((group) =>
+      group.items.map((item) => [item.id, item] as const),
+    ),
+  );
 
-const homeFaqItems = homeFaqIds.flatMap((id) => {
-  const item = faqById.get(id);
-  return item ? [item] : [];
-});
+  const homeFaqItems = homeFaqIds.flatMap((id) => {
+    const item = faqById.get(id);
+    return item ? [item] : [];
+  });
 
-const homeFaqGroup: FaqGroup = {
-  id: "home-faq",
-  title: "FAQ preview",
-  items: homeFaqItems,
-};
+  const homeFaqGroup: FaqGroup = {
+    id: "home-faq",
+    title: "FAQ preview",
+    items:
+      homeFaqItems.length > 0
+        ? homeFaqItems
+        : faqGroups.flatMap((g) => g.items).slice(0, 4),
+  };
 
-const missionThemes = tracks.flatMap((track) => track.themes);
+  const byId = (id: string) => timeline.find((t) => t.id === id);
+  const homeTimeline: TimelineItem[] = [
+    byId("registration-opens"),
+    byId("kickoff"),
+    {
+      id: "checkpoints",
+      when: "T+12 / T+24 / T+36",
+      clock: "22:00 / 10:00 / 22:00",
+      event:
+        "Checkpoints 1-3: progress and readiness notes, repository snapshots and a live video check-in with all members present",
+      note: "Each missed checkpoint: -3 points",
+      type: "checkpoint",
+    },
+    byId("hard-close"),
+    byId("final-results"),
+  ].filter((item): item is TimelineItem => Boolean(item));
 
-export default function HomePage() {
+  const missionThemes = tracks.flatMap((track) => track.themes);
+
   return (
     <>
       <Hero />
@@ -132,7 +156,7 @@ export default function HomePage() {
         <SpotlightGroup className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat, index) => (
             <Reveal
-              key={stat.label}
+              key={`${stat.label}-${index}`}
               delay={index * 70}
               className="h-full"
             >
@@ -158,7 +182,7 @@ export default function HomePage() {
             {guarantees.map((guarantee, index) => (
               <Reveal
                 as="li"
-                key={guarantee.title}
+                key={`${guarantee.title}-${index}`}
                 delay={index * 80}
                 className="h-full"
               >
@@ -216,7 +240,7 @@ export default function HomePage() {
               id="timeline-preview-heading"
               eyebrow="Launch sequence"
               title="From registration to orbit"
-              description="Five key moments from the full event schedule."
+              description={`Event dates: ${general.eventDatesLabel}. Key moments from the full schedule.`}
             />
             <Button3D href="/timeline" variant="secondary" size="sm">
               View full timeline
@@ -226,7 +250,7 @@ export default function HomePage() {
             <MiniTimeline items={homeTimeline} />
           </div>
           <p className="mt-6 text-sm leading-relaxed text-muted">
-            All times IST. Clock times assume a 10:00 IST kickoff.
+            All times IST. Kickoff is scheduled for {general.eventDatesLabel} at 10:00 IST.
           </p>
         </div>
       </section>
@@ -241,7 +265,7 @@ export default function HomePage() {
             id="prizes-heading"
             eyebrow="Mission honours"
             title="Prizes and certificates"
-            description="Awards for both tracks, chosen from the finalists. Amounts are to be announced."
+            description="Awards for both tracks, chosen from the finalists."
           />
           <Button3D href="/prizes" variant="secondary" size="sm">
             See all prizes
@@ -264,13 +288,13 @@ export default function HomePage() {
                       {track.name}
                     </Badge>
                     <span className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-muted">
-                      Amounts · {TBA}
+                      Track honours
                     </span>
                   </div>
                   <ul className="mt-4 divide-y divide-border/70">
                     {track.awards.map((award, awardIndex) => (
                       <li
-                        key={award.name}
+                        key={`${award.name}-${awardIndex}`}
                         className="flex items-start justify-between gap-4 py-3"
                       >
                         <div className="flex items-baseline gap-3">
@@ -308,9 +332,9 @@ export default function HomePage() {
         </div>
 
         <SpotlightGroup className="mt-5 grid gap-3 sm:grid-cols-3">
-          {prizeCertificates.map((certificate) => (
+          {prizeCertificates.map((certificate, index) => (
             <SpotlightTile
-              key={certificate.name}
+              key={`${certificate.name}-${index}`}
               className="corner-frame rounded-xl border border-border bg-surface/60 p-4"
             >
               <p className="text-sm font-medium text-foreground">
@@ -370,12 +394,11 @@ export default function HomePage() {
                     <p className="telemetry text-primary">Final call</p>
                     <SplitHeading
                       as="h2"
-                      text="Ready for liftoff?"
+                      text={general.finalCallHeading}
                       className="display-title text-h1 mx-auto mt-3 max-w-3xl text-balance text-foreground"
                     />
                     <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-muted">
-                      Registration opens at D-14. Event dates and fees: {TBA}.
-                      The rulebook is a draft.
+                      {general.finalCallCopy}
                     </p>
                     <div className="mt-8 flex flex-wrap justify-center gap-3">
                       <Magnetic>

@@ -12,23 +12,13 @@ import { HazardStripe } from "@/app/components/ui/HazardStripe";
 import { Frame } from "@/app/components/ui/Frame";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { SectionHeading } from "@/app/components/ui/SectionHeading";
-import {
-  benchmark,
-  disqualifications,
-  finalScore,
-  judgingProcess,
-  penalties,
-  scoringBands,
-  tieBreakers,
-} from "@/app/content/event-data";
+import { getLiveSiteContent } from "@/lib/site-content";
 
 export const metadata: Metadata = {
   title: "Scoring",
   description:
-    "Kosmodrome 2026 scoring: Beginner, Advanced and Finals criteria, bands, benchmark formula, judging process, penalties and tie-breakers.",
-  alternates: {
-    canonical: "/scoring",
-  },
+    "Kosmodrome 2027 scoring: Beginner, Advanced and Finals criteria, bands, benchmark formula, judging process, penalties and tie-breakers.",
+  alternates: { canonical: "/scoring" },
 };
 
 const pageContainer =
@@ -41,7 +31,17 @@ const bandTones: Record<string, BadgeTone> = {
   Weak: "danger",
 };
 
-export default function ScoringPage() {
+export default async function ScoringPage() {
+  const {
+    scoringBands,
+    benchmark,
+    finalScore,
+    judgingProcess,
+    penalties,
+    tieBreakers,
+    disqualifications,
+  } = await getLiveSiteContent();
+
   return (
     <div className={pageContainer}>
       <PageHeader
@@ -59,27 +59,19 @@ export default function ScoringPage() {
         </div>
       </PageHeader>
 
-      <section
-        className="mt-12"
-        aria-labelledby="criteria-heading"
-        data-hud="FLIGHT EVALUATION"
-      >
+      <section className="mt-12" aria-labelledby="criteria-heading" data-hud="FLIGHT EVALUATION">
         <SectionHeading
           id="criteria-heading"
           eyebrow="Criteria"
           title="Beginner, Advanced and Finals"
-          description="Each tab shows the weights and who scores each criterion. Bars show the share of 100."
+          description="Each tab shows the weights and who scores each criterion."
         />
         <div className="mt-8">
           <ScoringTables />
         </div>
       </section>
 
-      <section
-        className="mt-16"
-        aria-labelledby="bands-heading"
-        data-hud="BANDS"
-      >
+      <section className="mt-16" aria-labelledby="bands-heading" data-hud="BANDS">
         <SectionHeading
           id="bands-heading"
           eyebrow="Bands"
@@ -87,8 +79,8 @@ export default function ScoringPage() {
           description="Every judged criterion, on both tracks, uses this same scale."
         />
         <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {scoringBands.map((band) => (
-            <li key={band.name} className="h-full">
+          {scoringBands.map((band, index) => (
+            <li key={`${band.name}-${index}`} className="h-full">
               <TiltCard spotlight className="h-full rounded-xl">
                 <Card className="h-full">
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -126,15 +118,9 @@ export default function ScoringPage() {
               <code>{benchmark.formula}</code>
             </pre>
             <ul className="mt-4 space-y-2">
-              {benchmark.notes.map((note) => (
-                <li
-                  key={note}
-                  className="flex gap-3 text-sm leading-relaxed text-muted"
-                >
-                  <span
-                    className="mt-2 size-1.5 shrink-0 rounded-full bg-primary"
-                    aria-hidden="true"
-                  />
+              {benchmark.notes.map((note, index) => (
+                <li key={index} className="flex gap-3 text-sm leading-relaxed text-muted">
+                  <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
                   <span>{note}</span>
                 </li>
               ))}
@@ -144,66 +130,44 @@ export default function ScoringPage() {
       </section>
 
       <section className="mt-16" aria-labelledby="final-score-heading">
-        <SectionHeading
-          id="final-score-heading"
-          eyebrow="Final ranking"
-          title={finalScore.title}
-        />
+        <SectionHeading id="final-score-heading" eyebrow="Final ranking" title={finalScore.title} />
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           <TiltCard spotlight className="h-full rounded-xl">
             <Card className="h-full">
-              <p className="font-mono text-xs uppercase tracking-[0.14em] text-primary">
-                Top 8
-              </p>
-              <p className="mt-3 text-base leading-relaxed text-foreground">
-                {finalScore.top8}
-              </p>
+              <p className="font-mono text-xs uppercase tracking-[0.14em] text-primary">Top 8</p>
+              <p className="mt-3 text-base leading-relaxed text-foreground">{finalScore.top8}</p>
             </Card>
           </TiltCard>
           <TiltCard spotlight className="h-full rounded-xl">
             <Card className="h-full">
-              <p className="font-mono text-xs uppercase tracking-[0.14em] text-primary">
-                Ranked 9 and below
-              </p>
-              <p className="mt-3 text-base leading-relaxed text-foreground">
-                {finalScore.rest}
-              </p>
+              <p className="font-mono text-xs uppercase tracking-[0.14em] text-primary">Ranked 9 and below</p>
+              <p className="mt-3 text-base leading-relaxed text-foreground">{finalScore.rest}</p>
             </Card>
           </TiltCard>
         </div>
       </section>
 
       <section className="mt-16" aria-labelledby="judging-heading">
-        <SectionHeading
-          id="judging-heading"
-          eyebrow="Process"
-          title="How judging runs"
-        />
+        <SectionHeading id="judging-heading" eyebrow="Process" title="How judging runs" />
         <SpotlightGroup>
           <ol className="process-list mt-8 space-y-4">
             {judgingProcess.map((step, index) => (
               <SpotlightTile
                 as="li"
-                key={step}
+                key={index}
                 className="process-step flex gap-4 rounded-xl border border-border bg-surface p-5"
               >
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-primary bg-primary-soft font-mono text-sm text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-primary bg-primary-soft font-mono text-sm text-primary">
                   {index + 1}
                 </span>
-                <p className="text-sm leading-relaxed text-foreground">
-                  {step}
-                </p>
+                <p className="text-sm leading-relaxed text-foreground">{step}</p>
               </SpotlightTile>
             ))}
           </ol>
         </SpotlightGroup>
       </section>
 
-      <section
-        className="mt-16"
-        aria-labelledby="penalties-heading"
-        data-hud="PENALTIES"
-      >
+      <section className="mt-16" aria-labelledby="penalties-heading" data-hud="PENALTIES">
         <SectionHeading
           id="penalties-heading"
           eyebrow="Penalties"
@@ -214,16 +178,10 @@ export default function ScoringPage() {
         <div className="mt-8">
           <DataTable
             caption="Stage 1 penalties and deductions"
-            columns={[
-              { label: "Penalty" },
-              { label: "Deduction", align: "right" },
-            ]}
-            rows={penalties.map((penalty) => [
+            columns={[{ label: "Penalty" }, { label: "Deduction", align: "right" }]}
+            rows={penalties.map((penalty, index) => [
               penalty.item,
-              <span
-                key={`${penalty.item}-deduction`}
-                className="font-mono text-danger"
-              >
+              <span key={index} className="font-mono text-danger">
                 {penalty.deduction}
               </span>,
             ])}
@@ -234,22 +192,16 @@ export default function ScoringPage() {
       </section>
 
       <section className="mt-16" aria-labelledby="tie-breakers-heading">
-        <SectionHeading
-          id="tie-breakers-heading"
-          eyebrow="Ties"
-          title="Tie-breakers, in order"
-        />
+        <SectionHeading id="tie-breakers-heading" eyebrow="Ties" title="Tie-breakers, in order" />
         <SpotlightGroup>
           <ol className="mt-8 grid gap-3 sm:grid-cols-2">
             {tieBreakers.map((tieBreaker, index) => (
               <SpotlightTile
                 as="li"
-                key={tieBreaker}
+                key={index}
                 className="tie-breaker flex gap-3 rounded-lg border border-border bg-surface p-4 text-sm leading-relaxed text-foreground"
               >
-                <span className="font-mono text-xs text-primary">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
+                <span className="font-mono text-xs text-primary">{String(index + 1).padStart(2, "0")}</span>
                 <span>{tieBreaker}</span>
               </SpotlightTile>
             ))}
@@ -257,25 +209,14 @@ export default function ScoringPage() {
         </SpotlightGroup>
       </section>
 
-      <section
-        className="mt-16"
-        aria-labelledby="disqualification-heading"
-        data-hud="INTEGRITY"
-      >
-        <SectionHeading
-          id="disqualification-heading"
-          eyebrow="Integrity"
-          title="Disqualification grounds"
-        />
+      <section className="mt-16" aria-labelledby="disqualification-heading" data-hud="INTEGRITY">
+        <SectionHeading id="disqualification-heading" eyebrow="Integrity" title="Disqualification grounds" />
         <Frame className="mt-8 rounded-xl">
           <Callout title="These apply immediately" tone="danger">
             <ul className="mt-1 space-y-2">
-              {disqualifications.map((ground) => (
-                <li key={ground} className="flex gap-3">
-                  <span
-                    className="mt-2 size-1.5 shrink-0 rounded-full bg-danger"
-                    aria-hidden="true"
-                  />
+              {disqualifications.map((ground, index) => (
+                <li key={index} className="flex gap-3">
+                  <span className="mt-2 size-1.5 shrink-0 rounded-full bg-danger" aria-hidden="true" />
                   <span>{ground}</span>
                 </li>
               ))}

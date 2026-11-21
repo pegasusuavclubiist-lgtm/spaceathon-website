@@ -22,6 +22,7 @@ export class SupabaseError extends Error {
 
 const TIMEOUT_MS = 10_000;
 export const ID_BUCKET = "college-ids";
+export const PAYMENT_PROOFS_BUCKET = "payment-proofs";
 export const PROBLEMS_BUCKET = "problems";
 export const SUBMISSIONS_BUCKET = "submissions";
 
@@ -105,6 +106,28 @@ export async function insertRow<T>(
   return rows[0];
 }
 
+export async function upsertRow<T>(
+  table: string,
+  row: Record<string, unknown>,
+  onConflict: string,
+  select = "*",
+): Promise<T> {
+  const query = new URLSearchParams({
+    on_conflict: onConflict,
+    select,
+  }).toString();
+  const response = await call(`/rest/v1/${table}?${query}`, {
+    method: "POST",
+    headers: {
+      ...json,
+      Prefer: "resolution=merge-duplicates,return=representation",
+    },
+    body: JSON.stringify(row),
+  });
+  const rows = (await response.json()) as T[];
+  return rows[0];
+}
+
 /** PATCH rows matching `filter` (PostgREST syntax, e.g. { id: "eq.reg_x" }). */
 export async function updateRows(
   table: string,
@@ -118,6 +141,16 @@ export async function updateRows(
     body: JSON.stringify(patch),
   });
   return ((await response.json()) as unknown[]).length;
+}
+
+export async function deleteRows(
+  table: string,
+  filter: Record<string, string>,
+): Promise<void> {
+  const query = new URLSearchParams(filter).toString();
+  await call(`/rest/v1/${table}?${query}`, {
+    method: "DELETE",
+  });
 }
 
 // ── Storage ────────────────────────────────────────────────────────────────

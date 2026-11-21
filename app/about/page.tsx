@@ -10,13 +10,12 @@ import { Card } from "@/app/components/ui/Card";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { SectionHeading } from "@/app/components/ui/SectionHeading";
 import { LogoChip } from "@/app/components/ui/LogoChip";
-import { about, guarantees } from "@/app/content/event-data";
-import { brand } from "@/app/content/site-config";
+import { getLiveSiteContent } from "@/lib/site-content";
 
 export const metadata: Metadata = {
   title: "About",
   description:
-    "About Kosmodrome 2026, the IIST National Space Hackathon: a 48-hour national-level online event with Beginner and Advanced tracks.",
+    "About Kosmodrome 2027, the IIST National Space Hackathon on 17–18 January 2027.",
   alternates: {
     canonical: "/about",
   },
@@ -25,13 +24,15 @@ export const metadata: Metadata = {
 const pageContainer =
   "mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8";
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const { general, about, guarantees } = await getLiveSiteContent();
+
   return (
     <div className={pageContainer}>
       <PageHeader
         eyebrow="Briefing room"
         title="A national space hackathon, built for 48 hours"
-        description="Kosmodrome 2026 is the IIST National Space Hackathon: national level, online, and built around a single 48-hour build window."
+        description={`${general.name} (${general.eventDatesLabel}) is the ${general.subtitle}: national level, online, and built around a single 48-hour build window.`}
       />
 
       <div className="mt-12 space-y-16">
@@ -43,12 +44,12 @@ export default function AboutPage() {
             <SectionHeading
               id="story-heading"
               eyebrow="The event"
-              title="What Kosmodrome is"
+              title={`What ${general.shortName} is`}
             />
             <div className="mt-5 space-y-4">
-              {about.intro.map((paragraph) => (
+              {about.intro.map((paragraph, index) => (
                 <p
-                  key={paragraph}
+                  key={index}
                   className="text-base leading-relaxed text-muted"
                 >
                   {paragraph}
@@ -68,12 +69,12 @@ export default function AboutPage() {
                 </p>
                 <div className="mt-4 flex flex-wrap items-end gap-4 border-t border-border/70 pt-4">
                   <LogoChip
-                    src="/logos/isro_logo.svg"
+                    src="/logos/iist-logo.jpg"
                     alt="Indian Institute of Space Science and Technology (IIST)"
                     imgClassName="h-6 w-auto"
                   />
                   <LogoChip
-                    src="/logos/dhanak.svg"
+                    src="/logos/kosmodrome-logo.jpg"
                     alt="Dhanak"
                     imgClassName="h-9 w-auto"
                   />
@@ -96,14 +97,11 @@ export default function AboutPage() {
           className="rounded-2xl border border-primary/25 bg-primary-soft/40 p-6 sm:p-8"
           aria-labelledby="why-kosmodrome-heading"
         >
-          <p
-            id="why-kosmodrome-heading"
-            className="telemetry text-primary"
-          >
-            Why Kosmodrome?
+          <p id="why-kosmodrome-heading" className="telemetry text-primary">
+            Why {general.shortName}?
           </p>
           <p className="display-oxanium mt-3 max-w-3xl text-xl leading-snug text-foreground sm:text-2xl">
-            {brand.conceptLine}
+            {general.conceptLine}
           </p>
         </section>
 
@@ -118,7 +116,7 @@ export default function AboutPage() {
             {guarantees.map((guarantee, index) => (
               <Reveal
                 as="li"
-                key={guarantee.title}
+                key={`${guarantee.title}-${index}`}
                 delay={index * 70}
                 className="h-full"
               >
@@ -145,14 +143,14 @@ export default function AboutPage() {
             id="who-can-join-heading"
             eyebrow="Eligibility"
             title="Who can join"
-            description="Kosmodrome 2026 is open to students at recognised Indian institutions, with a separate Advanced route for graduates."
+            description={`${general.name} is open to students at recognised Indian institutions, with a separate Advanced route for graduates.`}
           />
           <SpotlightGroup className="mt-8">
             <ul className="grid gap-3 sm:grid-cols-2">
-              {about.whoCanJoin.map((item) => (
+              {about.whoCanJoin.map((item, index) => (
                 <SpotlightTile
                   as="li"
-                  key={item}
+                  key={index}
                   className="condition-row flex gap-3 rounded-lg border border-border bg-surface p-4 text-sm leading-relaxed text-foreground"
                 >
                   <span
@@ -185,7 +183,7 @@ export default function AboutPage() {
             {about.process.map((step, index) => (
               <Reveal
                 as="li"
-                key={step.title}
+                key={`${step.title}-${index}`}
                 delay={index * 70}
                 className="h-full"
               >

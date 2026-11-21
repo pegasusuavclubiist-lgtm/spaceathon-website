@@ -1,13 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { siteConfig } from "@/app/content/site-config";
+import { useSiteContent } from "../content/SiteContentProvider";
 
 function formatRemaining(targetMs: number, nowMs: number) {
-  const totalSeconds = Math.max(
-    0,
-    Math.floor((targetMs - nowMs) / 1000),
-  );
+  const totalSeconds = Math.max(0, Math.floor((targetMs - nowMs) / 1000));
   const days = Math.floor(totalSeconds / 86400);
   const hours = Math.floor((totalSeconds % 86400) / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -18,8 +15,9 @@ function formatRemaining(targetMs: number, nowMs: number) {
 }
 
 export function MissionClock({ className }: { className?: string }) {
-  const targetMs = siteConfig.eventStartISO
-    ? Date.parse(siteConfig.eventStartISO)
+  const { general } = useSiteContent();
+  const targetMs = general.eventStartISO
+    ? Date.parse(general.eventStartISO)
     : null;
   const validTarget = targetMs !== null && !Number.isNaN(targetMs);
   const [now, setNow] = useState<number | null>(null);
@@ -50,7 +48,7 @@ export function MissionClock({ className }: { className?: string }) {
       role="timer"
       aria-label={
         validTarget
-          ? "Countdown to Kosmodrome 2026 kickoff"
+          ? `Countdown to ${general.name} kickoff`
           : "Kickoff time to be announced"
       }
     >

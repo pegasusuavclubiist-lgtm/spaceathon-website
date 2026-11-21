@@ -10,17 +10,13 @@ import { Card } from "@/app/components/ui/Card";
 import { Frame } from "@/app/components/ui/Frame";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { SectionHeading } from "@/app/components/ui/SectionHeading";
-import {
-  prizeCertificates,
-  prizeConditions,
-  prizeRules,
-} from "@/app/content/event-data";
 import { TBA } from "@/app/content/site-config";
+import { getLiveSiteContent } from "@/lib/site-content";
 
 export const metadata: Metadata = {
   title: "Prizes",
   description:
-    "Kosmodrome 2026 prizes: Beginner and Advanced track awards, participation, merit and achievement certificates, prize conditions and payment rules.",
+    "Kosmodrome 2027 prizes: Beginner and Advanced track awards, certificates, and rules.",
   alternates: {
     canonical: "/prizes",
   },
@@ -29,13 +25,16 @@ export const metadata: Metadata = {
 const pageContainer =
   "mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8";
 
-export default function PrizesPage() {
+export default async function PrizesPage() {
+  const { general, prizeCertificates, prizeConditions, prizeRules } =
+    await getLiveSiteContent();
+
   return (
     <div className={pageContainer}>
       <PageHeader
         eyebrow="Mission success honours"
         title="Recognition for work that holds up"
-        description={`Awards for both tracks, certificates for valid submissions and clear conditions for every winner. Prize amounts: ${TBA}.`}
+        description="Awards for both tracks, certificates for valid submissions and clear conditions for every winner."
       >
         <Button3D href="/register" data-cursor="LAUNCH">
           Register your team
@@ -71,7 +70,7 @@ export default function PrizesPage() {
         />
         <ul className="mt-8 grid gap-4 md:grid-cols-3">
           {prizeCertificates.map((certificate, index) => (
-            <li key={certificate.name} className="h-full">
+            <li key={`${certificate.name}-${index}`} className="h-full">
               <TiltCard spotlight className="h-full rounded-xl">
                 <Card className="certificate-card h-full">
                   <span className="font-mono text-xs font-medium text-primary">
@@ -100,10 +99,10 @@ export default function PrizesPage() {
           />
           <SpotlightGroup className="mt-8">
             <ul className="space-y-3">
-              {prizeConditions.map((condition) => (
+              {prizeConditions.map((condition, index) => (
                 <SpotlightTile
                   as="li"
-                  key={condition}
+                  key={index}
                   className="condition-row flex gap-3 rounded-lg border border-border bg-surface p-4 text-sm leading-relaxed text-foreground"
                 >
                   <span
@@ -126,8 +125,8 @@ export default function PrizesPage() {
           <Frame className="mt-8 rounded-xl">
             <Callout title="Prize rules" tone="primary">
               <ul className="mt-1 space-y-2">
-                {prizeRules.map((rule) => (
-                  <li key={rule} className="flex gap-3">
+                {prizeRules.map((rule, index) => (
+                  <li key={index} className="flex gap-3">
                     <span
                       className="mt-2 size-1.5 shrink-0 rounded-full bg-primary"
                       aria-hidden="true"
@@ -153,8 +152,8 @@ export default function PrizesPage() {
             Build for the final field
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-muted">
-            Registration opens at D-14. Event dates and the registration fee are{" "}
-            {TBA}.
+            Event dates: {general.eventDatesLabel}. Registration fee:{" "}
+            {general.registrationFee ?? TBA}.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Button3D href="/register" data-cursor="LAUNCH">

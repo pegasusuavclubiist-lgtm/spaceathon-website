@@ -18,6 +18,12 @@ import {
 } from "./rules";
 
 export type FieldErrors = Record<string, string>;
+export type ParticipantCategory = "iist" | "outsider";
+
+export const FEE_BY_CATEGORY: Record<ParticipantCategory, number> = {
+  iist: 299,
+  outsider: 499,
+};
 
 export const LIMITS = {
   teamName: 80,
@@ -26,9 +32,11 @@ export const LIMITS = {
   email: 254,
   contactName: 100,
   message: 4000,
+  paymentUtr: 64,
 } as const;
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const UTR_PATTERN = /^[A-Za-z0-9@._/-]{6,64}$/;
 // C0/C1 control characters, DEL, and Unicode bidi/zero-width controls.
 const CONTROL_CHARS =
   // eslint-disable-next-line no-control-regex
@@ -88,6 +96,9 @@ export interface NormalisedRegistration {
   teamName: string;
   track: Track;
   leaderEmail: string;
+  participantCategory: ParticipantCategory;
+  feeAmount: number;
+  paymentUtr: string | null;
   members: NormalisedMember[];
 }
 
@@ -117,6 +128,27 @@ export function validateRegistration(body: unknown): Validated<NormalisedRegistr
   const leaderEmail = normaliseEmail(body.leaderEmail);
   const leaderProblem = emailError(leaderEmail, true);
   if (leaderProblem) errors.leaderEmail = leaderProblem;
+
+  // Payment category & UPI UTR reference (₹299 IISTians, ₹499 outsiders)
+  const rawCategory = cleanLine(body.participantCategory).toLowerCase();
+  let participantCategory: ParticipantCategory = "outsider";
+  if (rawCategory === "iist" || rawCategory === "outsider") {
+    participantCategory = rawCategory;
+  } else if (rawCategory) {
+    errors.participantCategory = "Choose IISTian (₹299) or Outsider (₹499).";
+  }
+
+  const rawUtr = cleanLine(body.paymentUtr);
+  let paymentUtr: string | null = null;
+  if (body.paymentUtr !== undefined) {
+    if (!rawUtr) {
+      errors.paymentUtr = "Enter the UPI transaction ID / UTR number after scanning the QR code.";
+    } else if (!UTR_PATTERN.test(rawUtr)) {
+      errors.paymentUtr = "Enter a valid UPI transaction ID / UTR (6 to 64 characters).";
+    } else {
+      paymentUtr = rawUtr;
+    }
+  }
 
   const members: NormalisedMember[] = [];
   const rawMembers = Array.isArray(body.members) ? body.members : null;
@@ -195,7 +227,15 @@ export function validateRegistration(body: unknown): Validated<NormalisedRegistr
 
   return {
     ok: true,
-    value: { teamName, track: track as Track, leaderEmail, members },
+    value: {
+      teamName,
+      track: track as Track,
+      leaderEmail,
+      participantCategory,
+      feeAmount: FEE_BY_CATEGORY[participantCategory],
+      paymentUtr,
+      members,
+    },
   };
 }
 

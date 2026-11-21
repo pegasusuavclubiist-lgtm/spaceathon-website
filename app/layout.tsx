@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono, Orbitron, Oxanium } from "next/font/google";
 import "./globals.css";
+import { SiteContentProvider } from "@/app/components/content/SiteContentProvider";
 import { EffectsProvider } from "@/app/components/effects/effects-provider";
 import { CommandPaletteProvider } from "@/app/components/effects/CommandPaletteProvider";
 import { ToastProvider } from "@/app/components/effects/ToastProvider";
@@ -14,6 +15,9 @@ import { RouteAnnouncer } from "@/app/components/layout/RouteAnnouncer";
 import { ClientChrome } from "@/app/components/effects/ClientChrome";
 import { SpaceCanvas } from "@/app/components/space/SpaceCanvas";
 import { siteConfig } from "@/app/content/site-config";
+import { getLiveSiteContent } from "@/lib/site-content";
+
+export const dynamic = "force-dynamic";
 
 const displayFont = Orbitron({
   variable: "--font-orbitron-src",
@@ -78,7 +82,9 @@ export const viewport: Viewport = {
   themeColor: "#05070c",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const initialContent = await getLiveSiteContent();
+
   return (
     <html
       lang="en"
@@ -91,32 +97,34 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         }}
       />
       <body className="flex min-h-full flex-col bg-background font-sans text-foreground">
-        <ToastProvider>
-          <EffectsProvider>
-            <CommandPaletteProvider>
-              <SmoothScroll />
-              <div className="space-backdrop" aria-hidden="true" />
-              <SpaceCanvas />
-              <a href="#main-content" className="skip-link">
-                Skip to content
-              </a>
-              <RouteAnnouncer />
-              <ClientChrome />
-              <Navbar />
-              <ScrollHUD />
-              <main
-                id="main-content"
-                tabIndex={-1}
-                className="site-main flex-1"
-              >
-                {children}
-              </main>
-              <Footer />
-              <BackToTop />
-              <MobileActionBar />
-            </CommandPaletteProvider>
-          </EffectsProvider>
-        </ToastProvider>
+        <SiteContentProvider initialContent={initialContent}>
+          <ToastProvider>
+            <EffectsProvider>
+              <CommandPaletteProvider>
+                <SmoothScroll />
+                <div className="space-backdrop" aria-hidden="true" />
+                <SpaceCanvas />
+                <a href="#main-content" className="skip-link">
+                  Skip to content
+                </a>
+                <RouteAnnouncer />
+                <ClientChrome />
+                <Navbar />
+                <ScrollHUD />
+                <main
+                  id="main-content"
+                  tabIndex={-1}
+                  className="site-main flex-1"
+                >
+                  {children}
+                </main>
+                <Footer />
+                <BackToTop />
+                <MobileActionBar />
+              </CommandPaletteProvider>
+            </EffectsProvider>
+          </ToastProvider>
+        </SiteContentProvider>
       </body>
     </html>
   );

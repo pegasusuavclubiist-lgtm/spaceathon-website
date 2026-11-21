@@ -1,18 +1,5 @@
 /**
  * Frontend API client layer.
- *
- * All network access from the UI goes through this module — components never
- * call `fetch` directly. Behaviour is controlled by NEXT_PUBLIC_API_MODE:
- *
- *   "mock" (default) — no network. Functions wait a short time and resolve
- *                      with a successful, obviously-fake response.
- *   "live"           — functions POST JSON to the backend endpoints described
- *                      in docs/api-contract.md. Network errors, non-2xx
- *                      responses and timeouts are caught and mapped onto
- *                      ApiResult; raw errors never reach the UI.
- *
- * Also here: the college ID upload (multipart, token-authorised) and the
- * participant portal client (personal bearer key, live mode only).
  */
 
 import type {
@@ -22,6 +9,7 @@ import type {
   ContactPayload,
   CollegeIdUploadGrant,
   ContactResponse,
+  PaymentProofUploadGrant,
   RegisterPayload,
   RegisterResponse,
   SignedUpload,
@@ -65,18 +53,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-/** Pull a machine-usable field error map out of whatever the server sent. */
 function extractFieldErrors(body: unknown): ApiFieldErrors | undefined {
-  if (!isRecord(body)) {
-    return undefined;
-  }
+  if (!isRecord(body)) return undefined;
 
   const candidates = [body, body.error, body.errors, body.fieldErrors];
 
   for (const candidate of candidates) {
-    if (!isRecord(candidate)) {
-      continue;
-    }
+    if (!isRecord(candidate)) continue;
 
     const out: ApiFieldErrors = {};
 
@@ -90,19 +73,14 @@ function extractFieldErrors(body: unknown): ApiFieldErrors | undefined {
       }
     }
 
-    if (Object.keys(out).length > 0) {
-      return out;
-    }
+    if (Object.keys(out).length > 0) return out;
   }
 
   return undefined;
 }
 
-/** Pull a human-readable message out of whatever the server sent. */
 function extractMessage(body: unknown, fallback: string): string {
-  if (!isRecord(body)) {
-    return fallback;
-  }
+  if (!isRecord(body)) return fallback;
 
   if (typeof body.message === "string" && body.message.trim()) {
     return body.message;
@@ -126,27 +104,24 @@ function messageForStatus(status: number): string {
   if (status === 400 || status === 422) {
     return "Please fix the highlighted fields and try again.";
   }
-
+  if (status === 401) {
+    return "Authentication required. Check your credentials.";
+  }
   if (status === 403) {
     return "This action is not allowed right now.";
   }
-
   if (status === 404) {
     return "This service is not available yet. Please try again later.";
   }
-
   if (status === 409) {
-    return "A registration already exists for this team.";
+    return "This action conflicts with the current state.";
   }
-
   if (status === 429) {
     return "Too many attempts. Please wait a moment and try again.";
   }
-
   if (status >= 500) {
     return "Something went wrong on our side. Please try again.";
   }
-
   return "The request could not be completed. Please try again.";
 }
 
@@ -192,9 +167,10 @@ async function post<TResponse, TPayload>(
     const body = await parseBody(response);
 
     if (response.ok) {
-      const data = isRecord(body) && isRecord(body.data)
-        ? (body.data as unknown as TResponse)
-        : (body as TResponse);
+      const data =
+        isRecord(body) && isRecord(body.data)
+          ? (body.data as unknown as TResponse)
+          : (body as TResponse);
       return { ok: true, data };
     }
 
@@ -219,7 +195,6 @@ async function post<TResponse, TPayload>(
         null,
       );
     }
-
     return failure(
       "Could not reach the server. Please check your connection and try again.",
       null,
@@ -240,6 +215,10 @@ function mockResponseFor<TResponse, TPayload>(
       teamName: registerPayload.teamName,
       track: registerPayload.track,
       memberCount: registerPayload.members.length,
+      participantCategory: registerPayload.participantCategory,
+      feeAmount: registerPayload.participantCategory === "iist" ? 299 : 499,
+      paymentUtr: registerPayload.paymentUtr,
+      paymentStatus: "pending",
       receivedAt: new Date().toISOString(),
       verificationStatus: "pending",
     } as unknown as TResponse;
@@ -258,28 +237,25 @@ function mockResponseFor<TResponse, TPayload>(
   } as unknown as TResponse;
 }
 
-/**
- * Register a team. College ID files are not part of this JSON payload: upload
- * them afterwards with `uploadCollegeId` and the grant in the response.
- */
 export function registerTeam(
   payload: RegisterPayload,
 ): Promise<ApiResult<RegisterResponse>> {
   return post<RegisterResponse, RegisterPayload>(ENDPOINTS.register, payload);
 }
 
-/** Send a contact/OC message. */
 export function sendContactMessage(
   payload: ContactPayload,
 ): Promise<ApiResult<ContactResponse>> {
   return post<ContactResponse, ContactPayload>(ENDPOINTS.contact, payload);
 }
 
-/** Turn a fetch Response into ApiResult using the same error mapping as `post`. */
 async function toResult<T>(response: Response): Promise<ApiResult<T>> {
   const body = await parseBody(response);
   if (response.ok) {
-    const data = isRecord(body) && isRecord(body.data) ? (body.data as unknown as T) : (body as T);
+    const data =
+      isRecord(body) && isRecord(body.data)
+        ? (body.data as unknown as T)
+        : (body as T);
     return { ok: true, data };
   }
   const fieldErrors = extractFieldErrors(body);
@@ -294,10 +270,6 @@ function networkFailure(error: unknown): ApiFailure {
   return failure("Could not reach the server. Please check your connection and try again.", null);
 }
 
-/**
- * Upload one member's college ID after registration (multipart). Phone photos
- * often exceed the size limit, so callers should compress images first.
- */
 export async function uploadCollegeId(
   grant: Pick<CollegeIdUploadGrant, "url" | "token" | "fileField" | "memberIndexField">,
   memberIndex: number,
@@ -314,7 +286,6 @@ export async function uploadCollegeId(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60_000);
   try {
-    // No Content-Type header: the browser adds the multipart boundary.
     const response = await fetch(grant.url, {
       method: "POST",
       headers: { Authorization: `Bearer ${grant.token}` },
@@ -329,18 +300,46 @@ export async function uploadCollegeId(
   }
 }
 
-// ── Participant portal ──────────────────────────────────────────────────────
+export async function uploadPaymentProof(
+  grant: Pick<PaymentProofUploadGrant, "url" | "token" | "fileField">,
+  file: Blob,
+): Promise<ApiResult<{ uploaded: boolean }>> {
+  if (API_MODE === "mock") {
+    await delay(MOCK_DELAY_MS / 3);
+    return { ok: true, data: { uploaded: true } };
+  }
+  const form = new FormData();
+  form.set(grant.fileField, file);
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 60_000);
+  try {
+    const response = await fetch(grant.url, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${grant.token}` },
+      body: form,
+      signal: controller.signal,
+    });
+    return await toResult(response);
+  } catch (error) {
+    return networkFailure(error);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ── Participant, Judge & Admin authenticated requests ───────────────────────
 
 const PORTAL_TIMEOUT_MS = 30_000;
 
-/** Authenticated JSON request to a portal endpoint. Live mode only. */
 export async function portalRequest<T>(
   key: string,
-  method: "GET" | "POST",
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
   path: string,
   json?: unknown,
+  extraHeaders?: Record<string, string>,
 ): Promise<ApiResult<T>> {
-  if (API_MODE === "mock") {
+  if (API_MODE === "mock" && path.startsWith("/api/portal")) {
     return failure("The portal needs the live backend. Set NEXT_PUBLIC_API_MODE=live.", null);
   }
   const controller = new AbortController();
@@ -352,6 +351,7 @@ export async function portalRequest<T>(
         Accept: "application/json",
         Authorization: `Bearer ${key}`,
         ...(json !== undefined ? { "Content-Type": "application/json" } : {}),
+        ...(extraHeaders ?? {}),
       },
       ...(json !== undefined ? { body: JSON.stringify(json) } : {}),
       signal: controller.signal,
@@ -365,7 +365,29 @@ export async function portalRequest<T>(
   }
 }
 
-/** Download a problem file. Watermarked text comes back as a body; other files as a signed link. */
+export async function adminRequest<T>(
+  token: string,
+  actor: string,
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
+  path: string,
+  json?: unknown,
+): Promise<ApiResult<T>> {
+  const headers: Record<string, string> = {};
+  if (actor.trim()) {
+    headers["X-Admin-Actor"] = actor.trim();
+  }
+  return portalRequest<T>(token, method, path, json, headers);
+}
+
+export async function judgeRequest<T>(
+  key: string,
+  method: "GET" | "POST",
+  path: string,
+  json?: unknown,
+): Promise<ApiResult<T>> {
+  return portalRequest<T>(key, method, path, json);
+}
+
 export async function portalDownload(
   key: string,
   fileId: string,
@@ -401,7 +423,6 @@ export async function portalDownload(
   }
 }
 
-/** Upload a file straight to storage with a signed URL from the backend. */
 export async function putToSignedUrl(upload: SignedUpload, file: Blob): Promise<ApiResult<{ uploaded: true }>> {
   try {
     const response = await fetch(upload.uploadUrl, {

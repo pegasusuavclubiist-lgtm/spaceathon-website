@@ -9,12 +9,12 @@ import { Card } from "@/app/components/ui/Card";
 import { Frame } from "@/app/components/ui/Frame";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { SectionHeading } from "@/app/components/ui/SectionHeading";
-import { trackRules, tracks, trackThemesNote } from "@/app/content/event-data";
+import { getLiveSiteContent } from "@/lib/site-content";
 
 export const metadata: Metadata = {
   title: "Tracks",
   description:
-    "Compare the Beginner and Advanced tracks at Kosmodrome 2026: eligibility, problem style, evaluation, submission pack, finalists and themes.",
+    "Compare the Beginner and Advanced tracks at Kosmodrome 2027.",
   alternates: {
     canonical: "/tracks",
   },
@@ -23,43 +23,44 @@ export const metadata: Metadata = {
 const pageContainer =
   "mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8";
 
-const beginnerTrack = tracks[0];
-const advancedTrack = tracks[1];
+export default async function TracksPage() {
+  const { tracks, trackRules, trackThemesNote } = await getLiveSiteContent();
+  const beginnerTrack = tracks[0];
+  const advancedTrack = tracks[1] ?? tracks[0];
 
-const comparisonRows = [
-  {
-    label: "Who it is for",
-    beginner: beginnerTrack.audience,
-    advanced: advancedTrack.audience,
-  },
-  {
-    label: "Team size",
-    beginner: beginnerTrack.teamSize,
-    advanced: advancedTrack.teamSize,
-  },
-  {
-    label: "Problem style",
-    beginner: beginnerTrack.problemStyle.join(" "),
-    advanced: advancedTrack.problemStyle.join(" "),
-  },
-  {
-    label: "Evaluation",
-    beginner: beginnerTrack.evaluation.join(" "),
-    advanced: advancedTrack.evaluation.join(" "),
-  },
-  {
-    label: "Submission pack",
-    beginner: beginnerTrack.submissionPack.join(", "),
-    advanced: advancedTrack.submissionPack.join(", "),
-  },
-  {
-    label: "Finalists",
-    beginner: beginnerTrack.finalists,
-    advanced: advancedTrack.finalists,
-  },
-];
+  const comparisonRows = [
+    {
+      label: "Who it is for",
+      beginner: beginnerTrack.audience,
+      advanced: advancedTrack.audience,
+    },
+    {
+      label: "Team size",
+      beginner: beginnerTrack.teamSize,
+      advanced: advancedTrack.teamSize,
+    },
+    {
+      label: "Problem style",
+      beginner: beginnerTrack.problemStyle.join(" "),
+      advanced: advancedTrack.problemStyle.join(" "),
+    },
+    {
+      label: "Evaluation",
+      beginner: beginnerTrack.evaluation.join(" "),
+      advanced: advancedTrack.evaluation.join(" "),
+    },
+    {
+      label: "Submission pack",
+      beginner: beginnerTrack.submissionPack.join(", "),
+      advanced: advancedTrack.submissionPack.join(", "),
+    },
+    {
+      label: "Finalists",
+      beginner: beginnerTrack.finalists,
+      advanced: advancedTrack.finalists,
+    },
+  ];
 
-export default function TracksPage() {
   return (
     <div className={pageContainer}>
       <PageHeader
@@ -81,7 +82,7 @@ export default function TracksPage() {
           id="comparison-heading"
           eyebrow="Side by side"
           title="Beginner vs Advanced"
-          description="Same 48-hour window, different starting points and submission packs. Focus a column or hide the rows that match."
+          description="Same 48-hour window, different starting points and submission packs."
         />
         <BeamBorder className="mt-8 rounded-2xl">
           <TrackCompare rows={comparisonRows} />
@@ -125,9 +126,9 @@ export default function TracksPage() {
                   {track.summary}
                 </p>
                 <ul className="mt-4 space-y-2.5">
-                  {track.themes.map((theme) => (
+                  {track.themes.map((theme, index) => (
                     <li
-                      key={theme}
+                      key={index}
                       className="flex gap-3 text-sm leading-relaxed text-foreground"
                     >
                       <span
@@ -157,8 +158,8 @@ export default function TracksPage() {
         <Frame className="mt-8 rounded-xl">
           <Callout title="Track assignment is final at D-3" tone="primary">
             <ul className="mt-1 space-y-2">
-              {trackRules.map((rule) => (
-                <li key={rule} className="flex gap-3">
+              {trackRules.map((rule, index) => (
+                <li key={index} className="flex gap-3">
                   <span
                     className="mt-2 size-1.5 shrink-0 rounded-full bg-primary"
                     aria-hidden="true"

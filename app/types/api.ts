@@ -1,36 +1,26 @@
 /**
  * Shared API types for the Kosmodrome frontend.
- *
- * These describe the payloads the UI sends to the backend and the envelope it
- * expects back. The backend developer owns `app/api/` and should keep the two
- * in sync; see `docs/api-contract.md` for the full contract.
  */
 
 /** Tracks the frontend can register a team for. */
 export type RegisterTrack = "Beginner" | "Advanced";
+export type ParticipantCategory = "iist" | "outsider";
 
 /** One team member as sent by the registration form. */
 export interface RegisterMemberPayload {
   fullName: string;
-  /** Institutional email. */
   email: string;
-  /** College or institution name. */
   college: string;
-  /** Programme and year, e.g. "UG year 2", "PG", "Graduate within six months". */
   programme: string;
-  // The college ID file is not part of this JSON payload. After registering,
-  // the form uploads each member's file with `uploadCollegeId` using the grant
-  // returned in `RegisterResponse.collegeIdUpload`.
 }
 
 /** Payload for POST /api/register. */
 export interface RegisterPayload {
   teamName: string;
-  /** Either "Beginner" or "Advanced". */
   track: string;
-  /** Leader contact for OC updates. */
   leaderEmail: string;
-  /** 2 to 4 members. */
+  participantCategory: ParticipantCategory;
+  paymentUtr: string;
   members: RegisterMemberPayload[];
   rulebookAccepted: boolean;
   declarationAccepted: boolean;
@@ -43,10 +33,14 @@ export interface RegisterResponse {
   teamName: string;
   track: string;
   memberCount: number;
+  participantCategory?: ParticipantCategory;
+  feeAmount?: number;
+  paymentUtr?: string | null;
+  paymentStatus?: "pending" | "confirmed" | "rejected";
   receivedAt: string;
   verificationStatus?: "pending";
-  /** One-time capability for uploading each member's college ID. Absent in mock mode. */
   collegeIdUpload?: CollegeIdUploadGrant;
+  paymentProofUpload?: PaymentProofUploadGrant;
 }
 
 export interface CollegeIdUploadGrant {
@@ -56,6 +50,17 @@ export interface CollegeIdUploadGrant {
   token: string;
   fileField: string;
   memberIndexField: string;
+  maxBytes: number;
+  allowedTypes: string[];
+  expiresAt: string | null;
+}
+
+export interface PaymentProofUploadGrant {
+  url: string;
+  method: "POST";
+  tokenType: "Bearer";
+  token: string;
+  fileField: string;
   maxBytes: number;
   allowedTypes: string[];
   expiresAt: string | null;
@@ -75,9 +80,6 @@ export interface ContactResponse {
   receivedAt: string;
 }
 
-/** Field-level validation errors, keyed like the form does:
- *  "teamName" | "track" | "leaderEmail" | "members.<index>.email" | "…"
- *  or top-level form keys such as "rulebookAccepted". */
 export type ApiFieldErrors = Record<string, string>;
 
 export interface ApiSuccess<T> {
@@ -87,11 +89,8 @@ export interface ApiSuccess<T> {
 
 export interface ApiFailure {
   ok: false;
-  /** User-friendly message, safe to render in the UI. */
   message: string;
-  /** HTTP status, or null for network/timeout/client-side failures. */
   status: number | null;
-  /** Optional per-field errors returned by the server (400/422). */
   fieldErrors?: ApiFieldErrors;
 }
 
@@ -161,4 +160,30 @@ export interface PortalLeaderboard {
 
 export interface PortalAppeal {
   appeal: { id: string; ground: string; description: string; status: string; decision_note: string | null; created_at: string } | null;
+}
+
+// ── AI Usage Analysis (Judging & Admin) ─────────────────────────────────────
+
+export interface AiFileBreakdown {
+  path: string;
+  aiPercent: number;
+  confidence: "low" | "medium" | "high";
+  signals: string[];
+}
+
+export interface AiUsageReport {
+  teamCode?: string;
+  teamId?: string;
+  overallAiPercent: number;
+  codeAiPercent: number | null;
+  reportAiPercent: number | null;
+  declaredAiTools: string[];
+  declaredAiLogPresent: boolean;
+  undeclaredAiSuspected: boolean;
+  riskLevel: "low" | "moderate" | "high";
+  fileBreakdown: AiFileBreakdown[];
+  signals: string[];
+  summary: string;
+  analyzedBy: string;
+  analyzedAt: string;
 }

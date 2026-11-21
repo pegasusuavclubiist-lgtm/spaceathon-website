@@ -10,7 +10,6 @@ import { useMediaQuery } from "../effects/use-media-query";
 import { subscribeScroll } from "../effects/scroll-store";
 import { Magnetic } from "../fx/Magnetic";
 import { Button3D } from "../ui/Button3D";
-import { BrandMark } from "../ui/BrandMark";
 import { Wordmark } from "../ui/Wordmark";
 import { CloseIcon, MenuIcon, SearchIcon } from "../ui/icons";
 import { useCommandPalette } from "../effects/CommandPaletteProvider";
@@ -420,27 +419,63 @@ export function Navbar() {
       >
         <div className="command-deck-outer">
           <div className="command-deck-inner" data-private={mode === "full" ? "glass" : undefined}>
-            <Link
-              href="/"
-              onClick={() => {
-                setMenuOpen(false);
-                setExpandedMobile(null);
-              }}
-              className="command-wordmark group"
-              aria-label={`${siteConfig.name} home`}
-              data-cursor="HOME"
-            >
-              <span className="command-logo" aria-hidden="true">
-                <BrandMark className="size-6" />
-              </span>
-              <span className="command-wordmark-text">
-                <Wordmark
-                  className="wordmark-navbar holo-sheen"
-                  dataMode={mode}
-                />
-                <span className="wordmark-sub">2026 · IIST</span>
-              </span>
-            </Link>
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <Link
+                href="/"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setExpandedMobile(null);
+                }}
+                className="command-wordmark group"
+                aria-label={`${siteConfig.name} home`}
+                data-cursor="HOME"
+              >
+                <span className="command-logo overflow-hidden rounded-full border border-border/80 bg-white p-0.5">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/logos/kosmodrome-logo.jpg"
+                    alt="Kosmodrome 2027 logo"
+                    className="size-7 rounded-full object-contain"
+                  />
+                </span>
+                <span className="command-wordmark-text">
+                  <Wordmark
+                    className="wordmark-navbar holo-sheen"
+                    dataMode={mode}
+                  />
+                  <span className="wordmark-sub">2027 · IIST</span>
+                </span>
+              </Link>
+
+              <span className="hidden h-5 w-px bg-border/70 xl:block" aria-hidden="true" />
+
+              <div className="hidden items-center gap-1.5 xl:flex" aria-label="Organiser and space partner">
+                <Link
+                  href="/about"
+                  title="Indian Institute of Space Science and Technology (IIST)"
+                  className="inline-flex size-8 items-center justify-center overflow-hidden rounded-full border border-border/80 bg-white p-0.5 transition-transform hover:scale-105"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/logos/iist-logo.jpg"
+                    alt="IIST logo"
+                    className="size-full rounded-full object-contain"
+                  />
+                </Link>
+                <Link
+                  href="/sponsors"
+                  title="Official Space Partner: Kepler Aerospace"
+                  className="inline-flex h-8 items-center justify-center rounded-md border border-border/80 bg-white px-2 py-0.5 transition-transform hover:scale-105"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/logos/kepler-aerospace.png"
+                    alt="Kepler Aerospace logo"
+                    className="h-5 w-auto object-contain"
+                  />
+                </Link>
+              </div>
+            </div>
 
             <nav
               ref={navRef}

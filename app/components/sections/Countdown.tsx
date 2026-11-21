@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { siteConfig } from "@/app/content/site-config";
+import { useSiteContent } from "../content/SiteContentProvider";
 import { useEffectsMode } from "../effects/effects-provider";
 import { Badge } from "../ui/Badge";
 import { TMinus } from "../ui/StatusLight";
@@ -14,10 +14,7 @@ interface Remaining {
 }
 
 function getRemaining(targetMs: number, nowMs: number): Remaining {
-  const totalSeconds = Math.max(
-    0,
-    Math.floor((targetMs - nowMs) / 1000),
-  );
+  const totalSeconds = Math.max(0, Math.floor((targetMs - nowMs) / 1000));
 
   return {
     days: Math.floor(totalSeconds / 86400),
@@ -39,10 +36,11 @@ function formatUnit(key: keyof Remaining, value: number) {
 }
 
 export function Countdown() {
+  const { general } = useSiteContent();
   const mode = useEffectsMode();
   const animate = mode !== "off";
-  const targetMs = siteConfig.eventStartISO
-    ? Date.parse(siteConfig.eventStartISO)
+  const targetMs = general.eventStartISO
+    ? Date.parse(general.eventStartISO)
     : null;
   const hasTarget = targetMs !== null && !Number.isNaN(targetMs);
   const [now, setNow] = useState<number | null>(null);
@@ -87,14 +85,14 @@ export function Countdown() {
     <div
       className="corner-frame w-full max-w-md rounded-2xl border border-border/80 bg-surface/90 p-5 shadow-glow sm:p-6"
       role="timer"
-      aria-label="T-minus countdown to Kosmodrome 2026 liftoff"
+      aria-label={`T-minus countdown to ${general.name} liftoff`}
     >
       <div className="flex items-center justify-between gap-3">
         <p className="flex items-center gap-2 text-primary">
           <span className="status-dot" aria-hidden="true" />
           <TMinus />
         </p>
-        <Badge tone="primary">T0</Badge>
+        <Badge tone="primary">{general.eventDatesLabel || "T0"}</Badge>
       </div>
 
       {!hasTarget || !dateLabel ? (
@@ -127,7 +125,7 @@ export function Countdown() {
       ) : started ? (
         <div className="mt-5 rounded-xl border border-primary bg-primary-soft/80 p-5">
           <p className="text-2xl font-semibold tracking-tight text-primary">
-            Kosmodrome 2026 has begun.
+            {general.name} has begun.
           </p>
           <p className="mt-2 text-sm leading-relaxed text-foreground">
             The 48-hour clock is running. Problem statements are live on the
@@ -136,10 +134,7 @@ export function Countdown() {
         </div>
       ) : remaining ? (
         <>
-          <div
-            className="mt-5 grid grid-cols-4 gap-2"
-            aria-hidden="true"
-          >
+          <div className="mt-5 grid grid-cols-4 gap-2" aria-hidden="true">
             {units.map((unit) => {
               const value = formatUnit(unit.key, remaining[unit.key]);
 

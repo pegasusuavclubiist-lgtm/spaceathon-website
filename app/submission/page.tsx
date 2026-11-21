@@ -6,21 +6,21 @@ import { DataTable } from "@/app/components/ui/DataTable";
 import { Frame } from "@/app/components/ui/Frame";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { SectionHeading } from "@/app/components/ui/SectionHeading";
-import { submission } from "@/app/content/event-data";
+import { getLiveSiteContent } from "@/lib/site-content";
 
 export const metadata: Metadata = {
   title: "Submission",
   description:
-    "Kosmodrome 2026 submission window, Beginner and Advanced submission packs, blind-judging rules and the pre-flight checklist.",
-  alternates: {
-    canonical: "/submission",
-  },
+    "Kosmodrome 2027 submission window, Beginner and Advanced submission packs, blind-judging rules and pre-flight checklist.",
+  alternates: { canonical: "/submission" },
 };
 
 const pageContainer =
   "mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8";
 
-export default function SubmissionPage() {
+export default async function SubmissionPage() {
+  const { submission } = await getLiveSiteContent();
+
   return (
     <div className={pageContainer}>
       <PageHeader
@@ -39,25 +39,17 @@ export default function SubmissionPage() {
         </Callout>
       </Frame>
 
-      <section
-        className="mt-12"
-        aria-labelledby="pack-heading"
-        data-hud="PACK BY TRACK"
-      >
+      <section className="mt-12" aria-labelledby="pack-heading" data-hud="PACK BY TRACK">
         <SectionHeading
           id="pack-heading"
           eyebrow="Pack by track"
           title="What each track submits"
-          description="Both tracks need a repository, README and signed Integrity Declaration. The report, demo and environment requirements differ."
+          description="Both tracks need a repository, README and signed Integrity Declaration."
         />
         <Frame className="mt-8 rounded-2xl border border-border bg-surface/55 p-4 shadow-[var(--elev-2)] sm:p-6">
           <DataTable
             caption="Beginner and Advanced submission requirements"
-            columns={[
-              { label: "Item" },
-              { label: "Beginner" },
-              { label: "Advanced" },
-            ]}
+            columns={[{ label: "Item" }, { label: "Beginner" }, { label: "Advanced" }]}
             rows={submission.comparison.map((row) => [
               row.item,
               row.beginner,
@@ -69,11 +61,7 @@ export default function SubmissionPage() {
         </Frame>
       </section>
 
-      <section
-        className="mt-12"
-        aria-labelledby="submission-rules-heading"
-        data-hud="INTEGRITY"
-      >
+      <section className="mt-12" aria-labelledby="submission-rules-heading" data-hud="INTEGRITY">
         <SectionHeading
           id="submission-rules-heading"
           eyebrow="Integrity"
@@ -94,11 +82,7 @@ export default function SubmissionPage() {
         </div>
       </section>
 
-      <section
-        className="mt-16"
-        aria-labelledby="checklist-heading"
-        data-hud="FINAL CHECKS"
-      >
+      <section className="mt-16" aria-labelledby="checklist-heading" data-hud="FINAL CHECKS">
         <SectionHeading
           id="checklist-heading"
           eyebrow="Final checks"

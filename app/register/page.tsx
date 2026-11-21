@@ -8,16 +8,13 @@ import { Callout } from "@/app/components/ui/Callout";
 import { Frame } from "@/app/components/ui/Frame";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { SectionHeading } from "@/app/components/ui/SectionHeading";
-import {
-  registrationEligibility,
-  registrationSteps,
-} from "@/app/content/event-data";
-import { siteConfig, TBA } from "@/app/content/site-config";
+import { TBA } from "@/app/content/site-config";
+import { getLiveSiteContent } from "@/lib/site-content";
 
 export const metadata: Metadata = {
   title: "Register",
   description:
-    "Kosmodrome 2026 registration preview: eligibility, the five-step registration process, team details and the frontend-only registration form.",
+    "Kosmodrome 2027 registration: eligibility, UPI QR payment (₹299 IISTians / ₹499 outsiders), college ID upload, and OC confirmation.",
   alternates: {
     canonical: "/register",
   },
@@ -26,16 +23,18 @@ export const metadata: Metadata = {
 const pageContainer =
   "mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8";
 
-export default function RegisterPage() {
-  const isOpen = siteConfig.registrationOpen;
-  const fee = siteConfig.registrationFee ?? TBA;
+export default async function RegisterPage() {
+  const { general, registrationEligibility, registrationSteps } =
+    await getLiveSiteContent();
+  const isOpen = general.registrationOpen;
+  const fee = general.registrationFee ?? TBA;
 
   return (
     <div className={pageContainer}>
       <PageHeader
         eyebrow="Crew manifest"
         title={isOpen ? "Register your team" : "Registration preview"}
-        description="Check eligibility, prepare every member's details and see how the registration flow will work. Teams have two to four members."
+        description={`Event dates: ${general.eventDatesLabel}. Check eligibility, upload college IDs, and complete UPI QR payment (₹${general.feeIist} IISTians / ₹${general.feeOutsider} outsiders).`}
       >
         <div className="flex flex-wrap items-center gap-3">
           <Badge tone={isOpen ? "success" : "warning"}>
@@ -45,18 +44,17 @@ export default function RegisterPage() {
             Fee: {fee}
           </span>
           <Button3D href="/rules" variant="secondary" size="sm">
-            Read the draft rules
+            Read the rules
           </Button3D>
         </div>
       </PageHeader>
 
       {!isOpen ? (
         <Frame className="mt-8 rounded-xl">
-          <Callout title="Preview: registration is not open yet" tone="warning">
+          <Callout title="Registration is currently closed" tone="warning">
             <p>
-              This form validates locally and nothing is sent or stored.
-              Registration dates, the fee and the official portal link are still
-              to be announced.
+              Registration is currently paused by the Organising Committee.
+              Check back soon or contact the OC.
             </p>
           </Callout>
         </Frame>
@@ -93,8 +91,8 @@ export default function RegisterPage() {
           <SectionHeading
             id="process-heading"
             eyebrow="Process"
-            title="Five steps to team lock"
-            description="From eligibility checks to the mandatory briefing."
+            title="Steps to team confirmation"
+            description="From UPI QR payment to OC verification and portal activation."
           />
           <SpotlightGroup className="mt-6">
             <ol className="space-y-3">
@@ -130,9 +128,9 @@ export default function RegisterPage() {
       >
         <SectionHeading
           id="registration-form-heading"
-          eyebrow="Form preview"
-          title="Team registration"
-          description="Team details, member details, college IDs and the required declarations. College ID files never leave this browser in the preview."
+          eyebrow="Registration form"
+          title="Team registration & UPI payment"
+          description="Submit team details, college IDs, and UPI QR payment UTR. Confirmation email is sent once the OC confirms your payment."
         />
         <div className="mt-8">
           <RegisterForm />

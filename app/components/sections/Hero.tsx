@@ -1,4 +1,7 @@
-import { siteConfig, TBA } from "@/app/content/site-config";
+"use client";
+
+import { siteConfig } from "@/app/content/site-config";
+import { useSiteContent } from "../content/SiteContentProvider";
 import { ExtrudedTitle } from "../fx/ExtrudedTitle";
 import { TypeLine } from "../fx/TypeLine";
 import { PowerOn } from "../fx/PowerOn";
@@ -13,6 +16,8 @@ import { SatelliteChips } from "../space/SatelliteChips";
 import { TelemetryTicker } from "../fx/TelemetryTicker";
 
 export function Hero() {
+  const { general } = useSiteContent();
+
   return (
     <section
       className="hero-space relative overflow-hidden border-b border-border"
@@ -28,19 +33,17 @@ export function Hero() {
           <div className="max-w-2xl pt-8 sm:pt-10">
             <div className="flex flex-wrap items-center gap-2">
               <PowerOn delay={40}>
-                <Badge tone="primary">{siteConfig.subtitle}</Badge>
+                <Badge tone="primary">{general.subtitle}</Badge>
               </PowerOn>
               <PowerOn delay={110}>
-                <Badge
-                  tone={siteConfig.registrationOpen ? "success" : "warning"}
-                >
-                  {siteConfig.registrationOpen
+                <Badge tone={general.registrationOpen ? "success" : "warning"}>
+                  {general.registrationOpen
                     ? "Registration open"
                     : "Registration not open yet"}
                 </Badge>
               </PowerOn>
               <PowerOn delay={180}>
-                <span className="telemetry index-numeral">2026</span>
+                <span className="telemetry index-numeral">{general.year}</span>
               </PowerOn>
             </div>
 
@@ -52,24 +55,24 @@ export function Hero() {
             </p>
 
             <ExtrudedTitle
-              text="KOSMODROME"
+              text={general.displayName}
               className="display-title text-hero scanline-text mt-3 uppercase leading-[1.02] tracking-[-0.02em] text-foreground"
             />
 
             <p className="display-oxanium mt-2 text-[clamp(1.15rem,3.4vw,1.9rem)] uppercase leading-none text-accent">
-              48 Hours to Orbit
+              {general.tagline}
             </p>
 
             <div className="mt-5 min-h-[6.4rem] max-w-xl text-lead text-muted sm:min-h-[5.4rem] lg:min-h-[3.4rem]">
               <TypeLine
                 as="p"
-                text="A kosmodrome is a spaceport: the place every mission starts. Kosmodrome is where your idea leaves the pad."
+                text={general.conceptLine}
                 duration={1000}
               />
             </div>
 
             <p className="mt-6 border-l border-primary/40 pl-4 font-mono text-[0.6875rem] uppercase leading-relaxed tracking-[0.16em] text-muted">
-              {siteConfig.factsLine}
+              {general.factsLine}
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
@@ -95,7 +98,7 @@ export function Hero() {
             </div>
 
             <p className="mt-4 text-xs leading-relaxed text-muted">
-              Rulebook draft. Event dates and fees: {TBA}.
+              {general.heroFootnote}
             </p>
           </div>
 
@@ -114,9 +117,7 @@ export function Hero() {
           </div>
         </div>
 
-        <TelemetryTicker
-          className="-mx-4 mt-8 sm:-mx-6 lg:-mx-8 lg:mt-10"
-        />
+        <TelemetryTicker className="-mx-4 mt-8 sm:-mx-6 lg:-mx-8 lg:mt-10" />
 
         <div className="mt-5 flex flex-wrap items-end justify-between gap-6 border-t border-border/60 pt-5">
           <span className="scroll-cue" aria-hidden="true">
@@ -127,9 +128,9 @@ export function Hero() {
             className="hidden items-center gap-4 font-mono text-[0.5625rem] uppercase tracking-[0.18em] text-muted sm:flex"
             aria-hidden="true"
           >
-            <span>T- TBA</span>
+            <span>{general.eventDatesLabel}</span>
             <span className="h-px w-8 bg-border" />
-            <span>SPACEPORT 2026</span>
+            <span>SPACEPORT {general.year}</span>
           </div>
         </div>
       </div>

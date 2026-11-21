@@ -1,8 +1,8 @@
 /**
- * Team activation: runs when the OC verifies a team. Assigns the anonymous
- * Team ID (B-001 / A-001), issues one personal portal key per member and
- * emails it. If mail is not configured (or a send fails) the affected keys are
- * returned to the OC once so they can be handed over by hand.
+ * Team activation: runs when the OC verifies a team (after payment is confirmed).
+ * Assigns the anonymous Team ID (B-001 / A-001), issues one personal portal key
+ * per member and emails it. If mail is not configured (or a send fails) the
+ * affected keys are returned to the OC once so they can be handed over by hand.
  */
 
 import { getConfig } from "./config";
@@ -21,11 +21,11 @@ export interface ActivationResult {
 function mailBody(name: string, teamCode: string, key: string): { subject: string; text: string } {
   const link = `${getConfig().siteUrl}/portal#key=${key}`;
   return {
-    subject: `Kosmodrome 2026: your team ${teamCode} is verified`,
+    subject: `Kosmodrome 2027: your team ${teamCode} is verified`,
     text: [
       `Hello ${name},`,
       "",
-      `Your team has been verified for Kosmodrome 2026 (48 Hours to Orbit). Your Team ID is ${teamCode}.`,
+      `Your team has been verified for Kosmodrome 2027 (17–18 January 2027 · 48 Hours to Orbit). Your Team ID is ${teamCode}.`,
       "",
       "This is your personal portal key. It signs you in to the event portal, where you sign the",
       "Integrity Declaration before kickoff, get the problem statements at T0, and make your submission.",

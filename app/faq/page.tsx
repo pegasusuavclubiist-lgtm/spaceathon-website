@@ -6,12 +6,12 @@ import { Callout } from "@/app/components/ui/Callout";
 import { Frame } from "@/app/components/ui/Frame";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { SectionHeading } from "@/app/components/ui/SectionHeading";
-import { faqGroups } from "@/app/content/event-data";
+import { getLiveSiteContent } from "@/lib/site-content";
 
 export const metadata: Metadata = {
   title: "FAQ",
   description:
-    "Answers about Kosmodrome 2026 eligibility, team size and tracks, fees, the 48-hour event, AI tools, code reuse, judging and appeals.",
+    "Answers about Kosmodrome 2027 eligibility, team size and tracks, fees, the 48-hour event, AI tools, judging and appeals.",
   alternates: {
     canonical: "/faq",
   },
@@ -20,7 +20,9 @@ export const metadata: Metadata = {
 const pageContainer =
   "mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8";
 
-export default function FaqPage() {
+export default async function FaqPage() {
+  const { faqGroups } = await getLiveSiteContent();
+
   return (
     <div className={pageContainer}>
       <PageHeader

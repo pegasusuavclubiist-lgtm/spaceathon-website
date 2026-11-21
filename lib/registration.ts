@@ -1,6 +1,10 @@
 /**
  * Team registration service: atomic create, one-person-one-team conflicts,
- * idempotent replay of an identical retry, and the college ID upload grant.
+ * idempotent replay of an identical retry, college ID upload grant, and
+ * UPI payment proof upload grant.
+ *
+ * NOTE: Registration confirmation email is NOT sent here; it is strictly gated
+ * behind admin payment confirmation on the Admin Portal.
  */
 
 import { getConfig } from "./config";
@@ -8,7 +12,12 @@ import { auditBestEffort } from "./audit";
 import { getSchedule } from "./rules";
 import { ID_FILE_TYPES, newId, newUploadToken, sha256Hex } from "./security";
 import { rpc, selectRows, SupabaseError, updateRows } from "./supabase";
-import { teamNameKey, type FieldErrors, type NormalisedRegistration } from "./validation";
+import {
+  teamNameKey,
+  type FieldErrors,
+  type NormalisedRegistration,
+  type ParticipantCategory,
+} from "./validation";
 
 /** An identical resubmission within this window is treated as a client retry. */
 const REPLAY_WINDOW_MS = 15 * 60 * 1000;
@@ -26,14 +35,30 @@ export interface CollegeIdUploadGrant {
   expiresAt: string | null;
 }
 
+export interface PaymentProofUploadGrant {
+  url: string;
+  method: "POST";
+  tokenType: "Bearer";
+  token: string;
+  fileField: "file";
+  maxBytes: number;
+  allowedTypes: string[];
+  expiresAt: string | null;
+}
+
 export interface RegisterData {
   id: string;
   teamName: string;
   track: string;
   memberCount: number;
+  participantCategory: ParticipantCategory;
+  feeAmount: number;
+  paymentUtr: string | null;
+  paymentStatus: "pending";
   receivedAt: string;
   verificationStatus: "pending";
   collegeIdUpload: CollegeIdUploadGrant;
+  paymentProofUpload: PaymentProofUploadGrant;
 }
 
 export type RegisterOutcome =
@@ -46,6 +71,8 @@ export function hashRegistration(input: NormalisedRegistration): string {
       teamName: teamNameKey(input.teamName),
       track: input.track,
       leaderEmail: input.leaderEmail,
+      participantCategory: input.participantCategory,
+      paymentUtr: input.paymentUtr,
       members: input.members.map((m) => [m.fullName, m.email, m.college, m.programme]),
     }),
   );
@@ -59,11 +86,17 @@ function buildResponse(
 ): RegisterData {
   const config = getConfig();
   const lockAt = getSchedule(config).lockAt;
+  const allowedTypes = Object.values(ID_FILE_TYPES).map((t) => t.contentType);
+  const expiresAt = lockAt ? lockAt.toISOString() : null;
   return {
     id,
     teamName: input.teamName,
     track: input.track,
     memberCount: input.members.length,
+    participantCategory: input.participantCategory,
+    feeAmount: input.feeAmount,
+    paymentUtr: input.paymentUtr,
+    paymentStatus: "pending",
     receivedAt,
     verificationStatus: "pending",
     collegeIdUpload: {
@@ -74,8 +107,18 @@ function buildResponse(
       fileField: "file",
       memberIndexField: "memberIndex",
       maxBytes: config.maxIdBytes,
-      allowedTypes: Object.values(ID_FILE_TYPES).map((t) => t.contentType),
-      expiresAt: lockAt ? lockAt.toISOString() : null,
+      allowedTypes,
+      expiresAt,
+    },
+    paymentProofUpload: {
+      url: `/api/register/${id}/payment-proof`,
+      method: "POST",
+      tokenType: "Bearer",
+      token,
+      fileField: "file",
+      maxBytes: config.maxIdBytes,
+      allowedTypes,
+      expiresAt,
     },
   };
 }
@@ -99,6 +142,9 @@ export async function createRegistration(
         payload_hash: payloadHash,
         upload_token_hash: sha256Hex(token),
         rulebook_sha256: config.rulebookSha256 ?? "",
+        participant_category: input.participantCategory,
+        fee_amount: input.feeAmount,
+        payment_utr: input.paymentUtr ?? "",
       },
       p_members: input.members.map((m) => ({
         position: m.position,
@@ -121,7 +167,6 @@ async function handleConflict(
   ipHash: string,
 ): Promise<RegisterOutcome> {
   if (error.message.includes("team_members_email_unique")) {
-    // PostgREST details: Key (email_key)=(someone@college.edu) already exists.
     const match = /\(email_key\)=\(([^)]*)\)/.exec(error.details ?? "");
     const clash = match?.[1];
     const fieldErrors: FieldErrors = {};
@@ -131,7 +176,6 @@ async function handleConflict(
           "This email is already registered with a team. One person can join one team only.";
       }
     });
-    // Rulebook 3.4: the OC decides what happens to duplicate registrations.
     await auditBestEffort("system", "duplicate_member_rejected", null, {
       ipHash,
       positions: Object.keys(fieldErrors),
@@ -143,9 +187,6 @@ async function handleConflict(
     };
   }
 
-  // Team name clash: either a genuine duplicate or the client retrying after a
-  // lost response. Replaying is only allowed for an identical payload, shortly
-  // after creation; the upload token is rotated and returned again.
   const { rows } = await selectRows<{ id: string; payload_hash: string; created_at: string }>(
     "teams",
     { select: "id,payload_hash,created_at", team_name_key: `eq.${teamNameKey(input.teamName)}` },

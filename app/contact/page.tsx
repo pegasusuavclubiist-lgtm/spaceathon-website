@@ -10,48 +10,42 @@ import { Card } from "@/app/components/ui/Card";
 import { Frame } from "@/app/components/ui/Frame";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { SectionHeading } from "@/app/components/ui/SectionHeading";
-import { contactChannels, ocContactNotes } from "@/app/content/event-data";
 import { TBA } from "@/app/content/site-config";
+import { getLiveSiteContent } from "@/lib/site-content";
 
 export const metadata: Metadata = {
   title: "Contact",
-  description:
-    "Contact the Kosmodrome 2026 organising committee: official channels, accessibility requests, integrity reports, technical support and a message preview.",
-  alternates: {
-    canonical: "/contact",
-  },
+  description: "Contact the Kosmodrome 2027 organising committee.",
+  alternates: { canonical: "/contact" },
 };
 
 const pageContainer =
   "mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8";
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const { contactChannels, ocContactNotes } = await getLiveSiteContent();
+
   return (
     <div className={pageContainer}>
       <PageHeader
         eyebrow="Control centre"
         title="Reach the organising committee"
-        description="Official channels for registration questions, accessibility requests, technical support and conduct or integrity reports."
+        description="Official channels for registration questions, accessibility requests, technical support and integrity reports."
       >
         <Button3D href="/faq" variant="secondary">
           Check the FAQ first
         </Button3D>
       </PageHeader>
 
-      <section
-        className="mt-12"
-        aria-labelledby="channels-heading"
-        data-hud="CHANNELS"
-      >
+      <section className="mt-12" aria-labelledby="channels-heading" data-hud="CHANNELS">
         <SectionHeading
           id="channels-heading"
           eyebrow="Official channels"
           title="Where to reach the OC"
-          description={`Official channel links: ${TBA}.`}
         />
         <ul className="mt-8 grid gap-4 sm:grid-cols-2">
           {contactChannels.map((channel, index) => (
-            <li key={channel.id} className="h-full">
+            <li key={`${channel.id}-${index}`} className="h-full">
               <TiltCard spotlight className="h-full rounded-xl">
                 <Card className="flex h-full flex-col">
                   <div className="flex items-center justify-between gap-3">
@@ -72,26 +66,15 @@ export default function ContactPage() {
                     {channel.url ? (
                       <a
                         href={channel.url}
-                        target={
-                          channel.url.startsWith("mailto:")
-                            ? undefined
-                            : "_blank"
-                        }
-                        rel={
-                          channel.url.startsWith("mailto:")
-                            ? undefined
-                            : "noopener noreferrer"
-                        }
+                        target={channel.url.startsWith("mailto:") ? undefined : "_blank"}
+                        rel={channel.url.startsWith("mailto:") ? undefined : "noopener noreferrer"}
                         className="rounded-sm text-sm font-medium text-primary underline underline-offset-4"
                       >
                         Open {channel.label}
                       </a>
                     ) : (
                       <p className="text-sm text-muted">
-                        Link:{" "}
-                        <span className="font-medium text-foreground">
-                          {TBA}
-                        </span>
+                        Link: <span className="font-medium text-foreground">{TBA}</span>
                       </p>
                     )}
                   </div>
@@ -112,18 +95,14 @@ export default function ContactPage() {
           />
           <SpotlightGroup className="mt-6">
             <ul className="space-y-4">
-              {ocContactNotes.map((note) => (
+              {ocContactNotes.map((note, index) => (
                 <SpotlightTile
                   as="li"
-                  key={note.title}
+                  key={index}
                   className="rounded-xl border border-border bg-surface p-5"
                 >
-                  <h3 className="text-sm font-semibold text-foreground">
-                    {note.title}
-                  </h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-muted">
-                    {note.body}
-                  </p>
+                  <h3 className="text-sm font-semibold text-foreground">{note.title}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-muted">{note.body}</p>
                 </SpotlightTile>
               ))}
             </ul>
@@ -133,9 +112,9 @@ export default function ContactPage() {
         <section aria-labelledby="contact-form-heading" data-hud="MESSAGE">
           <SectionHeading
             id="contact-form-heading"
-            eyebrow="Message preview"
+            eyebrow="Message the OC"
             title="Send a message to the OC"
-            description="This form validates locally. Nothing is sent or stored in this preview."
+            description="Messages go straight to the Organising Committee inbox."
           />
           <Frame className="mt-6 rounded-xl border border-border bg-surface p-5 shadow-[var(--elev-2)] sm:p-6">
             <ContactForm />
@@ -146,9 +125,7 @@ export default function ContactPage() {
       <Frame className="mt-12 rounded-xl">
         <Callout title="Conduct and integrity reports" tone="warning">
           <p>
-            Anyone can report a conduct or integrity concern confidentially, and
-            retaliation is prohibited. The reporting channel is being finalised.
-            Reporting link: {TBA}.
+            Anyone can report a conduct or integrity concern confidentially via the form above.
           </p>
         </Callout>
       </Frame>

@@ -8,22 +8,22 @@ import { DataTable } from "@/app/components/ui/DataTable";
 import { Frame } from "@/app/components/ui/Frame";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { SectionHeading } from "@/app/components/ui/SectionHeading";
-import { fairPlayCards, fairPlayThreats } from "@/app/content/event-data";
 import { StatusLight } from "@/app/components/ui/StatusLight";
+import { getLiveSiteContent } from "@/lib/site-content";
 
 export const metadata: Metadata = {
   title: "Fair play",
   description:
-    "Kosmodrome 2026 fair play: sealed problems, leak tracing, integrity checks, blind judging, winner audits and the threat-control framework.",
-  alternates: {
-    canonical: "/fair-play",
-  },
+    "Kosmodrome 2027 fair play: sealed problems, leak tracing, integrity checks, blind judging, and winner audits.",
+  alternates: { canonical: "/fair-play" },
 };
 
 const pageContainer =
   "mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8";
 
-export default function FairPlayPage() {
+export default async function FairPlayPage() {
+  const { fairPlayCards, fairPlayThreats } = await getLiveSiteContent();
+
   return (
     <div className={pageContainer}>
       <PageHeader
@@ -36,11 +36,7 @@ export default function FairPlayPage() {
         </Button3D>
       </PageHeader>
 
-      <section
-        className="mt-12"
-        aria-labelledby="controls-heading"
-        data-hud="CONTROLS"
-      >
+      <section className="mt-12" aria-labelledby="controls-heading" data-hud="CONTROLS">
         <SectionHeading
           id="controls-heading"
           eyebrow="Controls"
@@ -48,8 +44,8 @@ export default function FairPlayPage() {
           description="From key custody before kickoff to the winner audit after the results."
         />
         <div className="mt-8 grid gap-5 lg:grid-cols-2">
-          {fairPlayCards.map((card) => (
-            <TiltCard key={card.id} spotlight className="h-full rounded-xl">
+          {fairPlayCards.map((card, index) => (
+            <TiltCard key={`${card.id}-${index}`} spotlight className="h-full rounded-xl">
               <Card className="h-full">
                 <div className="flex items-center justify-between gap-3">
                   <h3 className="text-lg font-semibold tracking-tight text-foreground">
@@ -58,15 +54,9 @@ export default function FairPlayPage() {
                   <StatusLight tone="go">GO</StatusLight>
                 </div>
                 <ul className="mt-4 space-y-2.5">
-                  {card.points.map((point) => (
-                    <li
-                      key={point}
-                      className="flex gap-3 text-sm leading-relaxed text-muted"
-                    >
-                      <span
-                        className="mt-2 size-1.5 shrink-0 rounded-full bg-primary"
-                        aria-hidden="true"
-                      />
+                  {card.points.map((point, pIdx) => (
+                    <li key={pIdx} className="flex gap-3 text-sm leading-relaxed text-muted">
+                      <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
                       <span>{point}</span>
                     </li>
                   ))}
@@ -77,11 +67,7 @@ export default function FairPlayPage() {
         </div>
       </section>
 
-      <section
-        className="mt-16"
-        aria-labelledby="threats-heading"
-        data-hud="THREAT MODEL"
-      >
+      <section className="mt-16" aria-labelledby="threats-heading" data-hud="THREAT MODEL">
         <SectionHeading
           id="threats-heading"
           eyebrow="Threat and control"
@@ -92,10 +78,7 @@ export default function FairPlayPage() {
           <DataTable
             caption="Fair-play threats and their controls"
             columns={[{ label: "Threat" }, { label: "Control" }]}
-            rows={fairPlayThreats.map((row) => [
-              row.threat,
-              row.control,
-            ])}
+            rows={fairPlayThreats.map((row) => [row.threat, row.control])}
             rowHeaders
             minWidth="44rem"
           />
@@ -105,12 +88,8 @@ export default function FairPlayPage() {
       <Frame className="mt-12 rounded-xl">
         <Callout title="Report an integrity concern" tone="primary">
           <p>
-            Anyone can report an integrity concern confidentially, and
-            retaliation is prohibited. Records are kept for 180 days. Use the{" "}
-            <Link
-              href="/contact"
-              className="text-primary underline underline-offset-4"
-            >
+            Anyone can report an integrity concern confidentially. Use the{" "}
+            <Link href="/contact" className="text-primary underline underline-offset-4">
               contact channels
             </Link>{" "}
             to reach the OC.
@@ -119,12 +98,8 @@ export default function FairPlayPage() {
       </Frame>
 
       <div className="mt-10 flex flex-wrap gap-3">
-        <Button3D href="/rules" variant="secondary">
-          Read the rules
-        </Button3D>
-        <Button3D href="/submission" variant="secondary">
-          Submission requirements
-        </Button3D>
+        <Button3D href="/rules" variant="secondary">Read the rules</Button3D>
+        <Button3D href="/submission" variant="secondary">Submission requirements</Button3D>
       </div>
     </div>
   );
