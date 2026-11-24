@@ -575,9 +575,15 @@ function ContactPreview() {
   );
 }
 
-type MoreTileId = "/about" | "/submission" | "/fair-play" | "/contact";
+type MoreTileId =
+  | "/about"
+  | "/submission"
+  | "/fair-play"
+  | "/faq"
+  | "/portal"
+  | "/contact";
 
-const moreTileCopy: Record<MoreTileId, { index: string; description: string }> = {
+const moreTileCopy: Record<string, { index: string; description: string }> = {
   "/about": {
     index: "01",
     description: "Mission, guarantees and the team path",
@@ -590,8 +596,16 @@ const moreTileCopy: Record<MoreTileId, { index: string; description: string }> =
     index: "03",
     description: "Sealed problems and auditable judging",
   },
-  "/contact": {
+  "/faq": {
     index: "04",
+    description: "Eligibility, fees, AI tools and appeals",
+  },
+  "/portal": {
+    index: "05",
+    description: "Verified team sign-in, problems and uploads",
+  },
+  "/contact": {
+    index: "06",
     description: "Official channels for requests and reports",
   },
 };
@@ -641,24 +655,28 @@ function MorePanel({ onNavigate }: { onNavigate?: () => void }) {
             More
           </h2>
           <div className="more-tiles mt-3">
-            {siteConfig.moreNavLinks.map((link) => {
+            {siteConfig.moreNavLinks.map((link, idx) => {
               const id = link.href as MoreTileId;
-              const copy = moreTileCopy[id];
+              const copy = moreTileCopy[id] ?? {
+                index: String(idx + 1).padStart(2, "0"),
+                description: `Open ${link.label}`,
+              };
               return (
-                <button
+                <Link
                   key={link.href}
-                  type="button"
+                  href={link.href}
+                  prefetch={false}
                   className="more-tile"
                   data-active={selected === id}
-                  data-cursor="SWITCH"
-                  onClick={() => setSelected(id)}
+                  data-cursor="OPEN"
+                  onClick={onNavigate}
                   onFocus={() => setSelected(id)}
                   onMouseEnter={() => setSelected(id)}
                 >
                   <span className="index-numeral">{copy.index}</span>
                   <span className="more-tile-title">{link.label}</span>
                   <span className="more-tile-copy">{copy.description}</span>
-                </button>
+                </Link>
               );
             })}
           </div>
@@ -673,7 +691,19 @@ function MorePanel({ onNavigate }: { onNavigate?: () => void }) {
             <ArrowRightIcon className="size-4" />
           </Link>
         </div>
-        <div className="nav-preview-body">{renderPreviewContent(selected, onNavigate)}</div>
+        <div className="nav-preview-body">
+          {selected === "/portal" ? (
+            <div className="flex h-full flex-col justify-center gap-2 p-2">
+              <p className="nav-preview-kicker">Participant Portal</p>
+              <p className="text-sm font-semibold text-foreground">Team Portal</p>
+              <p className="text-xs leading-relaxed text-muted">
+                {moreTileCopy[selected]?.description}
+              </p>
+            </div>
+          ) : (
+            renderPreviewContent(selected as FeaturedPath, onNavigate)
+          )}
+        </div>
       </div>
     </div>
   );
